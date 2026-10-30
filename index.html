@@ -94,5 +94,115 @@ function openWithdraw(e){if(e)e.preventDefault();document.getElementById('withdr
 function closeWithdraw(){document.getElementById('withdrawModal').style.display='none'}
 document.getElementById('withdrawModal').addEventListener('click',e=>{if(e.target.id==='withdrawModal')closeWithdraw()});
 </script>
+  <style>
+#authScreen{position:fixed;inset:0;z-index:9999;background:#100b19;display:flex;align-items:center;justify-content:center;padding:20px;color:white;font-family:Arial}
+#authBox{width:100%;max-width:390px;background:#1a1228;border:1px solid #64428b;border-radius:18px;padding:25px}
+#authBox h2{margin-top:0}
+#authBox input{width:100%;box-sizing:border-box;padding:13px;margin:8px 0 14px;background:#100b19;border:1px solid #64428b;border-radius:9px;color:white}
+#authBox button{padding:12px;border:0;border-radius:9px;background:#873fc2;color:white;font-weight:bold;cursor:pointer;margin:5px 4px 5px 0}
+#authMessage{font-size:13px;color:#d8b8ff;overflow-wrap:anywhere}
+#logoutButton{background:#64428b;color:white;border:0;border-radius:8px;padding:8px;cursor:pointer;margin-left:8px}
+</style>
+
+<div id="authScreen">
+  <div id="authBox">
+    <h2>EarnMoney</h2>
+    <p>Login or create your free account</p>
+
+    <label>Email Address</label>
+    <input id="authEmail" type="email" placeholder="Enter your email">
+
+    <label>Password</label>
+    <input id="authPassword" type="password" placeholder="At least 6 characters">
+
+    <button onclick="signUpUser()">Sign Up</button>
+    <button onclick="loginUser()">Login</button>
+
+    <p id="authMessage"></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://tqnwugsvzxxcimjyamrr.supabase.co";
+const SUPABASE_KEY = "sb_publishable_3SSSPPZARw55KWoMo6M33g_l-RlQuVF
+
+const authClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+const authMessage = document.getElementById("authMessage");
+
+async function signUpUser(){
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+
+  if(!email || password.length < 6){
+    authMessage.textContent = "Enter a valid email and password (6+ characters).";
+    return;
+  }
+
+  const {data,error} = await authClient.auth.signUp({
+    email: email,
+    password: password,
+    options: {
+      emailRedirectTo: "https://earnmoney2026.github.io/earn-money/"
+    }
+  });
+
+  if(error){
+    authMessage.textContent = error.message;
+  }else{
+    authMessage.textContent = "Signup successful! Check your email to confirm your account, then login.";
+  }
+}
+
+async function loginUser(){
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+
+  const {data,error} = await authClient.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if(error){
+    authMessage.textContent = error.message;
+  }else{
+    showDashboard(data.user);
+  }
+}
+
+function showDashboard(user){
+  document.getElementById("authScreen").style.display = "none";
+  document.querySelector(".app").style.display = "flex";
+
+  const username = document.querySelector(".profile .username");
+  if(username) username.textContent = user.email;
+
+  if(!document.getElementById("logoutButton")){
+    const btn = document.createElement("button");
+    btn.id = "logoutButton";
+    btn.textContent = "Logout";
+    btn.onclick = async function(){
+      await authClient.auth.signOut();
+      location.reload();
+    };
+    document.querySelector(".profile").appendChild(btn);
+  }
+}
+
+async function checkLogin(){
+  const {data} = await authClient.auth.getSession();
+  if(data.session){
+    showDashboard(data.session.user);
+  }else{
+    document.querySelector(".app").style.display = "none";
+  }
+}
+
+checkLogin();
+</script>
 </body>
 </html>
