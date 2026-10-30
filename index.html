@@ -196,7 +196,7 @@ async function loginUser(){
 
 function showDashboard(user){
   document.getElementById("authScreen").style.display = "none";
-  document.querySelector(".app").style.display = "flex";
+  document.querySelector(".app").style.display = "grid";
 
   const username = document.querySelector(".profile .username");
   if(username) username.textContent = user.email;
