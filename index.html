@@ -138,23 +138,35 @@ async function signUpUser(){
   const email = document.getElementById("authEmail").value.trim();
   const password = document.getElementById("authPassword").value;
 
-  if(!email || password.length < 6){
-    authMessage.textContent = "Enter a valid email and password (6+ characters).";
+  if(!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || password.length < 6){
+    authMessage.textContent = "Enter a valid email and a password with at least 6 characters.";
     return;
   }
 
-  const {data,error} = await authClient.auth.signUp({
-    email: email,
-    password: password,
-    options: {
-      emailRedirectTo: "https://earnmoney2026.github.io/earn-money/"
-    }
-  });
+  authMessage.textContent = "Creating your account...";
+  try {
+    const {data,error} = await authClient.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: "https://earnmoney2026.github.io/earn-money/"
+      }
+    });
 
-  if(error){
-    authMessage.textContent = error.message;
-  }else{
-    authMessage.textContent = "Signup successful! Check your email to confirm your account, then login.";
+    if(error){
+      authMessage.textContent = error.message;
+      return;
+    }
+
+    if(data.session && data.user){
+      authMessage.textContent = "Account created. Welcome!";
+      showDashboard(data.user);
+    }else{
+      authMessage.textContent = "Account created. Email confirmation is enabled, but the confirmation email may not arrive until SMTP is configured. For testing, disable Confirm email in Supabase Auth settings; enable it again before public launch with a verified SMTP sender.";
+    }
+  } catch (err) {
+    authMessage.textContent = "Could not create account. Please try again.";
+    console.error("Signup error:", err);
   }
 }
 
@@ -162,15 +174,22 @@ async function loginUser(){
   const email = document.getElementById("authEmail").value.trim();
   const password = document.getElementById("authPassword").value;
 
-  const {data,error} = await authClient.auth.signInWithPassword({
-    email: email,
-    password: password
-  });
+  if(!email || !password){
+    authMessage.textContent = "Enter your email and password.";
+    return;
+  }
 
-  if(error){
-    authMessage.textContent = error.message;
-  }else{
-    showDashboard(data.user);
+  authMessage.textContent = "Logging in...";
+  try {
+    const {data,error} = await authClient.auth.signInWithPassword({email,password});
+    if(error){
+      authMessage.textContent = error.message;
+    }else if(data.user){
+      showDashboard(data.user);
+    }
+  } catch (err) {
+    authMessage.textContent = "Login failed. Please try again.";
+    console.error("Login error:", err);
   }
 }
 
